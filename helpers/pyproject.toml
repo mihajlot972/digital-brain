@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brain-helpers"
+version = "0.1.0"
+description = "Helpers for private-brain Claude Code skills"
+requires-python = ">=3.10"
+dependencies = [
+    "PyYAML>=6.0",
+    "graphifyy>=0.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[tool.setuptools]
+py-modules = ["config", "frontmatter", "index_writer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
