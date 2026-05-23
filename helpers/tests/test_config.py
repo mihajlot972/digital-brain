@@ -2,7 +2,7 @@
 from pathlib import Path
 import pytest
 import yaml
-from config import (
+from digital_brain_helpers.config import (
     load_config,
     BrainConfig,
     ConfigNotFoundError,

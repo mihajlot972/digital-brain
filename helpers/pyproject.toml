@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "brain-helpers"
+name = "digital-brain-helpers"
 version = "0.1.0"
-description = "Helpers for private-brain Claude Code skills"
+description = "Helpers for digital-brain Claude Code skills"
 requires-python = ">=3.10"
 dependencies = [
     "PyYAML>=6.0",
@@ -15,10 +15,15 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
+    "pytest-cov>=4.0",
 ]
 
-[tool.setuptools]
-py-modules = ["config", "frontmatter", "index_writer"]
+[project.scripts]
+digital-brain = "digital_brain_helpers.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--cov=digital_brain_helpers --cov-fail-under=80"

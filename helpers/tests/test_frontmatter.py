@@ -1,7 +1,7 @@
 """Tests for YAML frontmatter read/write in markdown files."""
 from pathlib import Path
 import pytest
-from frontmatter import (
+from digital_brain_helpers.frontmatter import (
     read_frontmatter,
     write_frontmatter,
     update_frontmatter,

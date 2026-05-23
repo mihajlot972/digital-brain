@@ -1,8 +1,8 @@
 """Tests for _INDEX.md generation."""
 from pathlib import Path
 import pytest
-from frontmatter import write_frontmatter
-from index_writer import write_index, scan_vault
+from digital_brain_helpers.frontmatter import write_frontmatter
+from digital_brain_helpers.index_writer import write_index, scan_vault
 
 
 def make_concept(vault: Path, slug: str, title: str, summary: str = "Summary.") -> None:

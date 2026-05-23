@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List
 import re
 
-from frontmatter import split_document
+from .frontmatter import split_document
 
 
 INDEX_FILENAME = "_INDEX.md"
