@@ -1,19 +1,19 @@
 ---
-name: refresh-brain
-description: Build or rebuild the project-brain Obsidian vault from configured source_paths. v0 = full rebuild only, code-concept notes only.
+name: refresh-digital-brain
+description: Build or rebuild the digital-brain Obsidian vault from configured source_paths. v0 = full rebuild only, code-concept notes only.
 ---
 
-# /refresh-brain
+# /refresh-digital-brain
 
-Build the `<vault_dir>` Obsidian vault from `source_paths` defined in `.brain-config.yaml`. v0 MVP: full rebuild every time, code-concept notes only, no inventory gate.
+Build the `<vault_dir>` Obsidian vault from `source_paths` defined in `.digital-brain-config.yaml`. v0 MVP: full rebuild every time, code-concept notes only, no inventory gate.
 
 ## Usage
 
 ```
-/refresh-brain
+/refresh-digital-brain
 ```
 
-No arguments. Reads `.brain-config.yaml` from the current working directory (must be repo root).
+No arguments. Reads `.digital-brain-config.yaml` from the current working directory (must be repo root).
 
 ## What you (Claude) do when invoked
 
@@ -21,11 +21,12 @@ No arguments. Reads `.brain-config.yaml` from the current working directory (mus
 
 Run:
 ```bash
-test -f .brain-config.yaml || { echo "ERROR: .brain-config.yaml not found. Create it manually for v0."; exit 1; }
-HELPERS_VENV=private-brain/helpers/.venv/bin/python
-test -x "$HELPERS_VENV" || { echo "ERROR: helpers venv missing. Run: cd private-brain/helpers && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'"; exit 1; }
-"$HELPERS_VENV" -c "import yaml, config, frontmatter, index_writer" || { echo "ERROR: helper imports failed"; exit 1; }
-python3 -c "import graphify" 2>/dev/null || { echo "ERROR: graphify Python module not found. Run: pip install graphifyy"; exit 1; }
+INSTALL_ROOT="$(python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.digital-brain/install.json')))['install_root'])")"
+HELPERS_VENV="$INSTALL_ROOT/helpers/.venv/bin/python"
+test -f .digital-brain-config.yaml || { echo "ERROR: .digital-brain-config.yaml not found. Create it manually for v0."; exit 1; }
+test -x "$HELPERS_VENV" || { echo "ERROR: helpers venv missing. Run: cd $INSTALL_ROOT/helpers && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'"; exit 1; }
+"$HELPERS_VENV" -c "import yaml, digital_brain_helpers.config, digital_brain_helpers.frontmatter, digital_brain_helpers.index_writer" || { echo "ERROR: helper imports failed"; exit 1; }
+"$HELPERS_VENV" -c "import graphify" 2>/dev/null || { echo "ERROR: graphify Python module not found. Run: pip install graphifyy"; exit 1; }
 ```
 
 Note: `graphify` is a Python library (we call its modules directly), not a CLI command for the build pipeline. The `graphify` binary on PATH only handles install/query/hooks; the actual build uses `graphify.extract`, `graphify.build`, `graphify.cluster`, `graphify.export`.
@@ -38,9 +39,9 @@ If any check fails, stop with the error message and ask user to fix.
 "$HELPERS_VENV" -c "
 import json
 import sys
-sys.path.insert(0, 'private-brain/helpers')
+sys.path.insert(0, '$INSTALL_ROOT/helpers/src')
 from pathlib import Path
-from config import load_config
+from digital_brain_helpers.config import load_config
 cfg = load_config(Path('.').resolve())
 print(json.dumps({
     'source_paths_resolved': [str(p) for p in cfg.resolved_source_paths()],
@@ -219,9 +220,9 @@ COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "no-commit")
 SOURCE_RAW=$(jq -r '.source_paths_raw | join(",")' /tmp/brain_cfg.json)
 "$HELPERS_VENV" -c "
 import sys
-sys.path.insert(0, 'private-brain/helpers')
+sys.path.insert(0, '$INSTALL_ROOT/helpers/src')
 from pathlib import Path
-from index_writer import write_index
+from digital_brain_helpers.index_writer import write_index
 write_index(
     vault=Path('$VAULT_DIR'),
     source_paths='$SOURCE_RAW'.split(','),
@@ -242,7 +243,7 @@ Vault built: <vault_dir>/
 - Last refresh: <timestamp> (commit <sha>)
 
 Open <vault_dir>/ in Obsidian (File → Open Vault → Browse → <vault_dir>) to explore.
-Run /load-brain in your next session to use this vault as Claude context.
+Run /load-digital-brain in your next session to use this vault as Claude context.
 ```
 
 ### Step 7 — Cleanup
@@ -253,7 +254,7 @@ rm -f /tmp/brain_cfg.json
 
 ## Errors
 
-If any step fails, stop and report the error verbatim. Do NOT try to recover by skipping steps — a partial vault is worse than no vault. The user can re-run `/refresh-brain` after fixing the issue.
+If any step fails, stop and report the error verbatim. Do NOT try to recover by skipping steps — a partial vault is worse than no vault. The user can re-run `/refresh-digital-brain` after fixing the issue.
 
 ## Out of scope (v1+)
 
