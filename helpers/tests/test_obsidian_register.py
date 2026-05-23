@@ -92,3 +92,15 @@ def test_register_malformed_json_raises(fake_obsidian_config, tmp_path):
 
     # file should be untouched (not zeroed)
     assert fake_obsidian_config.read_text() == "{not valid json"
+
+
+def test_register_generates_valid_vault_id(fake_obsidian_config, tmp_path):
+    fake_obsidian_config.write_text("{}")
+    vault = tmp_path / "vault"
+    vault.mkdir()
+
+    register_vault(vault)
+    data = json.loads(fake_obsidian_config.read_text())
+    vault_id = next(iter(data["vaults"].keys()))
+    assert len(vault_id) == 16
+    assert all(c in "0123456789abcdef" for c in vault_id)
