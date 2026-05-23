@@ -14,3 +14,84 @@ def test_main_no_args_prints_help_and_exits_nonzero(capsys):
     assert rc != 0
     assert "remove" in captured.out or "remove" in captured.err
     assert "uninstall" in captured.out or "uninstall" in captured.err
+
+
+def _make_install_root(root: Path) -> Path:
+    """Create the minimum layout that `_looks_like_install_root` accepts."""
+    (root / "helpers").mkdir(parents=True, exist_ok=True)
+    (root / "helpers" / "pyproject.toml").write_text("[project]\nname='x'\n")
+    (root / "hooks").mkdir(exist_ok=True)
+    (root / "skills").mkdir(exist_ok=True)
+    return root
+
+
+def test_resolve_install_root_from_install_json(tmp_path, monkeypatch):
+    install_root = _make_install_root(tmp_path / "install")
+
+    db_dir = tmp_path / "dot_digital_brain"
+    db_dir.mkdir()
+    (db_dir / "install.json").write_text(
+        json.dumps({"install_root": str(install_root)})
+    )
+    monkeypatch.setattr(cli, "_install_json_path", lambda: db_dir / "install.json")
+
+    resolved = cli.resolve_install_root()
+    assert resolved == install_root.resolve()
+
+
+def test_resolve_install_root_falls_back_when_install_json_points_at_deleted_dir(
+    tmp_path, monkeypatch
+):
+    db_dir = tmp_path / "dot_digital_brain"
+    db_dir.mkdir()
+    (db_dir / "install.json").write_text(
+        json.dumps({"install_root": "/definitely/not/here"})
+    )
+    monkeypatch.setattr(cli, "_install_json_path", lambda: db_dir / "install.json")
+    monkeypatch.setattr(cli, "_console_script_symlink", lambda: None)
+
+    with pytest.raises(cli.InstallRootNotFound):
+        cli.resolve_install_root()
+
+
+def test_resolve_install_root_recovers_when_install_json_dir_deleted_but_symlink_works(
+    tmp_path, monkeypatch
+):
+    """install.json points at a deleted dir, but the console symlink reveals the real install."""
+    install_root = _make_install_root(tmp_path / "real_install")
+    venv_bin = install_root / "helpers" / ".venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    target_script = venv_bin / "digital-brain"
+    target_script.write_text("#!/bin/sh\n")
+    target_script.chmod(0o755)
+    link = tmp_path / "link_digital_brain"
+    link.symlink_to(target_script)
+
+    db_dir = tmp_path / "dot_digital_brain"
+    db_dir.mkdir()
+    (db_dir / "install.json").write_text(
+        json.dumps({"install_root": "/definitely/not/here"})
+    )
+    monkeypatch.setattr(cli, "_install_json_path", lambda: db_dir / "install.json")
+    monkeypatch.setattr(cli, "_console_script_symlink", lambda: link)
+
+    resolved = cli.resolve_install_root()
+    assert resolved == install_root.resolve()
+
+
+def test_resolve_install_root_uses_symlink_fallback(tmp_path, monkeypatch):
+    install_root = _make_install_root(tmp_path / "fallback_root")
+    venv_bin = install_root / "helpers" / ".venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    target_script = venv_bin / "digital-brain"
+    target_script.write_text("#!/bin/sh\n")
+    target_script.chmod(0o755)
+
+    link = tmp_path / "link_digital_brain"
+    link.symlink_to(target_script)
+
+    monkeypatch.setattr(cli, "_install_json_path", lambda: tmp_path / "nonexistent.json")
+    monkeypatch.setattr(cli, "_console_script_symlink", lambda: link)
+
+    resolved = cli.resolve_install_root()
+    assert resolved == install_root.resolve()
