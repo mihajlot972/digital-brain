@@ -26,9 +26,9 @@ HELPERS_PY="$DIGITAL_BRAIN_DIR/helpers/.venv/bin/python"
 
 # Resolve source_paths from config (relative form, host-repo)
 SRC_REL=$("$HELPERS_PY" -c "
-import sys; sys.path.insert(0, '$DIGITAL_BRAIN_DIR/helpers')
+import sys; sys.path.insert(0, '$DIGITAL_BRAIN_DIR/helpers/src')
 from pathlib import Path
-from config import load_config
+from digital_brain_helpers.config import load_config
 print(' '.join(load_config(Path('.').resolve()).source_paths))
 " 2>/dev/null) || exit 0
 
