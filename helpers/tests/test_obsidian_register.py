@@ -55,3 +55,17 @@ def test_register_preserves_other_vaults(fake_obsidian_config, tmp_path):
     assert data["vaults"]["abc123"]["path"] == "/other/vault"
     assert data["vaults"]["abc123"]["open"] is True
     assert len(data["vaults"]) == 2
+
+
+def test_register_same_path_twice_is_noop(fake_obsidian_config, tmp_path):
+    fake_obsidian_config.write_text("{}")
+    vault = tmp_path / "vault"
+    vault.mkdir()
+
+    first = register_vault(vault)
+    second = register_vault(vault)
+
+    assert first.status == "registered"
+    assert second.status == "already_present"
+    data = json.loads(fake_obsidian_config.read_text())
+    assert len(data["vaults"]) == 1
