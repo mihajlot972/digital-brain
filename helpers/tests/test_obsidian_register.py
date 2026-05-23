@@ -104,3 +104,35 @@ def test_register_generates_valid_vault_id(fake_obsidian_config, tmp_path):
     vault_id = next(iter(data["vaults"].keys()))
     assert len(vault_id) == 16
     assert all(c in "0123456789abcdef" for c in vault_id)
+
+
+def test_unregister_removes_matching_path(fake_obsidian_config, tmp_path):
+    fake_obsidian_config.write_text("{}")
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    register_vault(vault)
+    assert len(json.loads(fake_obsidian_config.read_text())["vaults"]) == 1
+
+    result = obsidian_register.unregister_vault(vault)
+
+    assert result.status == "unregistered"
+    assert json.loads(fake_obsidian_config.read_text())["vaults"] == {}
+
+
+def test_unregister_not_present_is_noop(fake_obsidian_config, tmp_path):
+    fake_obsidian_config.write_text(json.dumps({"vaults": {}}))
+    vault = tmp_path / "vault"
+    vault.mkdir()
+
+    result = obsidian_register.unregister_vault(vault)
+    assert result.status == "not_present"
+
+
+def test_unregister_missing_config_is_noop(tmp_path, monkeypatch):
+    cfg = tmp_path / "nope" / "obsidian.json"
+    monkeypatch.setattr(obsidian_register, "_obsidian_config_path", lambda: cfg)
+    vault = tmp_path / "vault"
+    vault.mkdir()
+
+    result = obsidian_register.unregister_vault(vault)
+    assert result.status == "obsidian_not_installed"
