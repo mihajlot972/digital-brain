@@ -15,6 +15,16 @@ Build the `<vault_dir>` Obsidian vault from `source_paths` defined in `.digital-
 
 No arguments. Reads `.digital-brain-config.yaml` from the current working directory (must be repo root).
 
+## Citation format for vault nodes
+
+When you reference a vault node in chat (during or after this skill runs), format the first mention per turn as:
+
+```
+[[NodeName]] ([source](src/path.py#L42), [vault](obsidian://open?vault=<vault-name>&file=NodeName.md))
+```
+
+Subsequent mentions in the same turn can use bare `[[NodeName]]`. Use `urllib.parse.quote` (or shell `python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' "<name>"`) to encode the vault name and file name if they contain spaces or reserved characters.
+
 ## What you (Claude) do when invoked
 
 ### Step 0 — Verify prerequisites
@@ -246,7 +256,28 @@ Open <vault_dir>/ in Obsidian (File → Open Vault → Browse → <vault_dir>) t
 Run /load-digital-brain in your next session to use this vault as Claude context.
 ```
 
-### Step 7 — Cleanup
+### Step 7 — Register vault with Obsidian + load INDEX
+
+After the vault is built, register it with Obsidian and read the freshly-written INDEX into your context so the user can use it immediately without running `/load-digital-brain` separately.
+
+```bash
+"$HELPERS_VENV" -c "
+from pathlib import Path
+from digital_brain_helpers.obsidian_register import register_vault
+result = register_vault(Path('$VAULT_DIR').resolve())
+print(f'[obsidian-register] {result.status}: {result.message}')
+"
+```
+
+(If Obsidian is not installed, the helper returns `status=obsidian_not_installed` and the build succeeds anyway.)
+
+Then use the Read tool on `$VAULT_DIR/_INDEX.md` and tell the user:
+
+```
+Brain built and registered with Obsidian. INDEX loaded into context. Ready to use.
+```
+
+### Step 8 — Cleanup
 
 ```bash
 rm -f /tmp/brain_cfg.json
