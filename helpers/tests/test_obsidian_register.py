@@ -80,3 +80,15 @@ def test_register_missing_obsidian_config_no_error(tmp_path, monkeypatch):
     result = register_vault(vault)
     assert result.status == "obsidian_not_installed"
     assert not cfg.exists()  # never created
+
+
+def test_register_malformed_json_raises(fake_obsidian_config, tmp_path):
+    fake_obsidian_config.write_text("{not valid json")
+    vault = tmp_path / "vault"
+    vault.mkdir()
+
+    with pytest.raises(ValueError, match="Malformed"):
+        register_vault(vault)
+
+    # file should be untouched (not zeroed)
+    assert fake_obsidian_config.read_text() == "{not valid json"
