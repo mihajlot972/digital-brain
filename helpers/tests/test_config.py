@@ -1,4 +1,4 @@
-"""Tests for .brain-config.yaml parsing."""
+"""Tests for .digital-brain-config.yaml parsing."""
 from pathlib import Path
 import pytest
 import yaml
@@ -11,7 +11,7 @@ from digital_brain_helpers.config import (
 
 
 def write_config(repo_root: Path, content: str) -> Path:
-    cfg = repo_root / ".brain-config.yaml"
+    cfg = repo_root / ".digital-brain-config.yaml"
     cfg.write_text(content)
     return cfg
 
@@ -20,12 +20,12 @@ def test_loads_minimal_valid_config(tmp_repo: Path):
     write_config(tmp_repo, """
 source_paths:
   - src/
-vault_dir: project-brain/
+vault_dir: digital-brain/
 """)
     cfg = load_config(tmp_repo)
     assert isinstance(cfg, BrainConfig)
     assert cfg.source_paths == ["src/"]
-    assert cfg.vault_dir == "project-brain/"
+    assert cfg.vault_dir == "digital-brain/"
     assert cfg.repo_root == tmp_repo
 
 
@@ -43,11 +43,11 @@ vault_dir: .brain/
 def test_missing_config_raises(tmp_repo: Path):
     with pytest.raises(ConfigNotFoundError) as exc:
         load_config(tmp_repo)
-    assert ".brain-config.yaml" in str(exc.value)
+    assert ".digital-brain-config.yaml" in str(exc.value)
 
 
 def test_missing_source_paths_raises(tmp_repo: Path):
-    write_config(tmp_repo, "vault_dir: project-brain/\n")
+    write_config(tmp_repo, "vault_dir: digital-brain/\n")
     with pytest.raises(ConfigSchemaError, match="source_paths"):
         load_config(tmp_repo)
 
@@ -55,7 +55,7 @@ def test_missing_source_paths_raises(tmp_repo: Path):
 def test_empty_source_paths_raises(tmp_repo: Path):
     write_config(tmp_repo, """
 source_paths: []
-vault_dir: project-brain/
+vault_dir: digital-brain/
 """)
     with pytest.raises(ConfigSchemaError, match="source_paths.*empty"):
         load_config(tmp_repo)
@@ -67,7 +67,7 @@ source_paths:
   - src/
 """)
     cfg = load_config(tmp_repo)
-    assert cfg.vault_dir == "project-brain/"
+    assert cfg.vault_dir == "digital-brain/"
 
 
 def test_malformed_yaml_raises(tmp_repo: Path):

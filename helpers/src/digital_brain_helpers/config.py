@@ -1,4 +1,4 @@
-"""Parse and validate .brain-config.yaml."""
+"""Parse and validate .digital-brain-config.yaml."""
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
@@ -6,8 +6,8 @@ from typing import List
 import yaml
 
 
-CONFIG_FILENAME = ".brain-config.yaml"
-DEFAULT_VAULT_DIR = "project-brain/"
+CONFIG_FILENAME = ".digital-brain-config.yaml"
+DEFAULT_VAULT_DIR = "digital-brain/"
 
 
 class ConfigNotFoundError(FileNotFoundError):
