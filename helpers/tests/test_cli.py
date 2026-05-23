@@ -79,6 +79,41 @@ def test_resolve_install_root_recovers_when_install_json_dir_deleted_but_symlink
     assert resolved == install_root.resolve()
 
 
+def test_remove_yes_deletes_vault_and_config_preserves_concept_notes(
+    tmp_path, monkeypatch
+):
+    monkeypatch.chdir(tmp_path)
+    # set up brain project
+    (tmp_path / ".digital-brain-config.yaml").write_text(
+        "source_paths: [.]\nvault_dir: vault/\n"
+    )
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    (vault / "Concept1.md").write_text(
+        "---\nlayer: concept\n---\n\n# Concept 1\nBody.\n"
+    )
+    (vault / "Extracted.md").write_text(
+        "---\ntype: code\n---\n\n# Extracted\nBody.\n"
+    )
+
+    # redirect graveyard + obsidian register + install root
+    graveyard = tmp_path / "graveyard"
+    monkeypatch.setattr(cli, "_graveyard_root", lambda: graveyard)
+    monkeypatch.setattr(cli, "unregister_vault_safe", lambda p: None)
+    # no install.json — _remove_hook_symlink should still no-op cleanly
+    monkeypatch.setattr(cli, "resolve_install_root",
+                        lambda: (_ for _ in ()).throw(cli.InstallRootNotFound("no")))
+
+    rc = cli.main(["remove", "--yes"])
+    assert rc == 0
+    assert not (tmp_path / ".digital-brain-config.yaml").exists()
+    assert not vault.exists()
+    # graveyard copy of concept note exists; extracted note NOT copied
+    grav_files = list(graveyard.rglob("*.md"))
+    assert any(f.name == "Concept1.md" for f in grav_files)
+    assert not any(f.name == "Extracted.md" for f in grav_files)
+
+
 def test_remove_exits_1_in_non_brain_dir(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     rc = cli.main(["remove", "--yes"])
