@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Auto-refresh extracted layer + INDEX without LLM.
 
-Called by git post-commit hook (or manually). Runs the AST-only graphify
+Called by git post-commit hook (or manually). Runs the AST-only digital-brain
 pipeline + regenerates _INDEX.md. Skips Claude concept-writing — that
 stays a manual /refresh-brain step because it costs LLM tokens.
 
@@ -13,10 +13,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-# private-brain root = parent of hooks/ (this script's directory)
-PRIVATE_BRAIN_DIR = Path(__file__).resolve().parent.parent
-HELPERS_DIR = PRIVATE_BRAIN_DIR / "helpers"
-sys.path.insert(0, str(HELPERS_DIR))
+# digital-brain root = parent of hooks/ (this script's directory)
+INSTALL_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(INSTALL_ROOT / "helpers" / "src"))
 
 
 def _host_repo_root() -> Path:
@@ -37,16 +36,16 @@ MIN_COMMUNITY_SIZE = 5
 
 
 def main() -> int:
-    cfg_path = REPO_ROOT / ".brain-config.yaml"
+    try:
+        from digital_brain_helpers.config import load_config, CONFIG_FILENAME
+        from digital_brain_helpers.index_writer import write_index
+    except ImportError as e:
+        print(f"[digital-brain] helpers not importable: {e}", file=sys.stderr)
+        return 0
+
+    cfg_path = REPO_ROOT / CONFIG_FILENAME
     if not cfg_path.exists():
         return 0  # not initialized; nothing to do
-
-    try:
-        from config import load_config
-        from index_writer import write_index
-    except ImportError as e:
-        print(f"[private-brain] helpers not importable: {e}", file=sys.stderr)
-        return 0
 
     try:
         from graphify.extract import collect_files, extract
@@ -54,7 +53,7 @@ def main() -> int:
         from graphify.cluster import cluster, score_all
         from graphify.export import to_obsidian, to_canvas, to_json
     except ImportError:
-        print("[private-brain] graphify not installed; skipping auto-refresh", file=sys.stderr)
+        print("[digital-brain] graphify not installed; skipping auto-refresh", file=sys.stderr)
         return 0
 
     cfg = load_config(REPO_ROOT)
@@ -164,7 +163,7 @@ def main() -> int:
     )
 
     print(
-        f"[private-brain] auto-refresh: {H.number_of_nodes()} nodes, "
+        f"[digital-brain] auto-refresh: {H.number_of_nodes()} nodes, "
         f"{len(big)} communities, commit {commit_sha}"
     )
     return 0
