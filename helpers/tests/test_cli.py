@@ -1,6 +1,7 @@
 """Tests for digital_brain_helpers.cli."""
 from __future__ import annotations
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -112,6 +113,64 @@ def test_remove_yes_deletes_vault_and_config_preserves_concept_notes(
     grav_files = list(graveyard.rglob("*.md"))
     assert any(f.name == "Concept1.md" for f in grav_files)
     assert not any(f.name == "Extracted.md" for f in grav_files)
+
+
+def test_remove_preserves_foreign_post_commit_hook(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".digital-brain-config.yaml").write_text(
+        "source_paths: [.]\nvault_dir: vault/\n"
+    )
+    (tmp_path / "vault").mkdir()
+    (tmp_path / ".git" / "hooks").mkdir(parents=True)
+    foreign_target = tmp_path / "foreign_script.sh"
+    foreign_target.write_text("#!/bin/sh\necho foreign\n")
+    foreign_target.chmod(0o755)
+    hook = tmp_path / ".git" / "hooks" / "post-commit"
+    hook.symlink_to(foreign_target)
+
+    monkeypatch.setattr(cli, "_graveyard_root", lambda: tmp_path / "grave")
+    monkeypatch.setattr(cli, "unregister_vault_safe", lambda p: None)
+    # Fake an install root that does NOT contain the foreign hook
+    install_root = tmp_path / "install"
+    (install_root / "helpers").mkdir(parents=True)
+    (install_root / "helpers" / "pyproject.toml").write_text("[project]\n")
+    (install_root / "hooks").mkdir()
+    (install_root / "skills").mkdir()
+    monkeypatch.setattr(cli, "resolve_install_root", lambda: install_root)
+
+    rc = cli.main(["remove", "--yes"])
+    assert rc == 0
+    # Foreign hook should still be present
+    assert hook.exists() and hook.is_symlink()
+    assert Path(os.readlink(hook)) == foreign_target
+
+
+def test_remove_removes_our_post_commit_hook(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".digital-brain-config.yaml").write_text(
+        "source_paths: [.]\nvault_dir: vault/\n"
+    )
+    (tmp_path / "vault").mkdir()
+    (tmp_path / ".git" / "hooks").mkdir(parents=True)
+
+    install_root = tmp_path / "install"
+    (install_root / "helpers").mkdir(parents=True)
+    (install_root / "helpers" / "pyproject.toml").write_text("[project]\n")
+    (install_root / "hooks").mkdir()
+    (install_root / "skills").mkdir()
+    our_hook = install_root / "hooks" / "post-commit"
+    our_hook.write_text("#!/bin/sh\n")
+    our_hook.chmod(0o755)
+    hook_link = tmp_path / ".git" / "hooks" / "post-commit"
+    hook_link.symlink_to(our_hook)
+
+    monkeypatch.setattr(cli, "_graveyard_root", lambda: tmp_path / "grave")
+    monkeypatch.setattr(cli, "unregister_vault_safe", lambda p: None)
+    monkeypatch.setattr(cli, "resolve_install_root", lambda: install_root)
+
+    rc = cli.main(["remove", "--yes"])
+    assert rc == 0
+    assert not hook_link.exists()
 
 
 def test_remove_exits_1_in_non_brain_dir(tmp_path, monkeypatch, capsys):
