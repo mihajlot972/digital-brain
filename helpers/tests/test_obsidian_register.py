@@ -69,3 +69,14 @@ def test_register_same_path_twice_is_noop(fake_obsidian_config, tmp_path):
     assert second.status == "already_present"
     data = json.loads(fake_obsidian_config.read_text())
     assert len(data["vaults"]) == 1
+
+
+def test_register_missing_obsidian_config_no_error(tmp_path, monkeypatch):
+    cfg = tmp_path / "nonexistent" / "obsidian.json"
+    monkeypatch.setattr(obsidian_register, "_obsidian_config_path", lambda: cfg)
+    vault = tmp_path / "vault"
+    vault.mkdir()
+
+    result = register_vault(vault)
+    assert result.status == "obsidian_not_installed"
+    assert not cfg.exists()  # never created
