@@ -197,3 +197,66 @@ def test_resolve_install_root_uses_symlink_fallback(tmp_path, monkeypatch):
 
     resolved = cli.resolve_install_root()
     assert resolved == install_root.resolve()
+
+
+def test_uninstall_removes_only_our_hook_entries(tmp_path, monkeypatch):
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    (fake_home / ".claude").mkdir()
+    settings = fake_home / ".claude" / "settings.json"
+
+    install_root = tmp_path / "install"
+    (install_root / "helpers").mkdir(parents=True)
+    (install_root / "helpers" / "pyproject.toml").write_text("[project]\n")
+    (install_root / "hooks").mkdir()
+    (install_root / "skills").mkdir()
+    (install_root / "skills" / "refresh-digital-brain").mkdir()
+    (install_root / "skills" / "load-digital-brain").mkdir()
+
+    settings.write_text(json.dumps({
+        "hooks": {
+            "SessionStart": [
+                {"matcher": "*", "hooks": [
+                    {"type": "command", "command": str(install_root / "hooks" / "session_start.sh")}
+                ]},
+                {"matcher": "*", "hooks": [
+                    {"type": "command", "command": "/usr/local/bin/other-hook.sh"}
+                ]},
+            ]
+        }
+    }))
+
+    (fake_home / ".claude" / "skills").mkdir()
+    skill_link_refresh = fake_home / ".claude" / "skills" / "refresh-digital-brain"
+    skill_link_load = fake_home / ".claude" / "skills" / "load-digital-brain"
+    skill_link_refresh.symlink_to(install_root / "skills" / "refresh-digital-brain")
+    skill_link_load.symlink_to(install_root / "skills" / "load-digital-brain")
+
+    (fake_home / ".local" / "bin").mkdir(parents=True)
+    console_link = fake_home / ".local" / "bin" / "digital-brain"
+    console_target = install_root / "helpers" / ".venv" / "bin" / "digital-brain"
+    console_target.parent.mkdir(parents=True)
+    console_target.write_text("#!/bin/sh\n")
+    console_target.chmod(0o755)
+    console_link.symlink_to(console_target)
+
+    (fake_home / ".digital-brain").mkdir()
+    (fake_home / ".digital-brain" / "install.json").write_text(
+        json.dumps({"install_root": str(install_root)})
+    )
+
+    monkeypatch.setenv("HOME", str(fake_home))
+    monkeypatch.setattr(cli, "resolve_install_root", lambda: install_root)
+
+    rc = cli.main(["uninstall", "--yes"])
+    assert rc == 0
+
+    new_settings = json.loads(settings.read_text())
+    sessionstart = new_settings["hooks"]["SessionStart"]
+    assert len(sessionstart) == 1
+    assert sessionstart[0]["hooks"][0]["command"] == "/usr/local/bin/other-hook.sh"
+
+    assert not skill_link_refresh.exists()
+    assert not skill_link_load.exists()
+    assert not console_link.exists()
+    assert not (fake_home / ".digital-brain" / "install.json").exists()
