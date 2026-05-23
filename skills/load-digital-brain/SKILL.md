@@ -15,6 +15,16 @@ Load `<vault_dir>/_INDEX.md` and inject it as a system reminder so subsequent st
 
 No arguments in v0. (Scenarios B and C — focused load and status — are v1.)
 
+## Citation format for vault nodes
+
+When you reference a vault node in chat (during or after this skill runs), format the first mention per turn as:
+
+```
+[[NodeName]] ([source](src/path.py#L42), [vault](obsidian://open?vault=<vault-name>&file=NodeName.md))
+```
+
+Subsequent mentions in the same turn can use bare `[[NodeName]]`. Use `urllib.parse.quote` (or shell `python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' "<name>"`) to encode the vault name and file name if they contain spaces or reserved characters.
+
 ## What you (Claude) do when invoked
 
 ### Step 1 — Verify config and vault exist
@@ -70,6 +80,12 @@ match the current HEAD, suggest /refresh-digital-brain to the user.
 ```
 
 After loading, briefly tell the user what you understand about the current vault state and ask what they want to work on.
+
+### Wikilink resolver
+
+If a user message contains `[[NodeName]]`, resolve `NodeName` to `<vault_dir>/<NodeName>.md`. If the exact filename does not exist, glob for `<vault_dir>/**/<NodeName>.md` (handles community-level filenames or nested layout). Read the resolved file using the Read tool before responding. If no match found, say so explicitly rather than guessing.
+
+This convention is always on while the brain is loaded. It lets the user reference any vault node in chat without typing a full file path.
 
 ## Errors
 
