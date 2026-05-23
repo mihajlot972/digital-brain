@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Auto-refresh private-brain extracted layer when source files change.
+# Auto-refresh digital-brain extracted layer when source files change.
 # Symlinked into .git/hooks/post-commit by hooks/install.sh.
 #
-# Locates private-brain via this script's own path (works after extraction
+# Locates digital-brain via this script's own path (works after extraction
 # to standalone repo + symlinking back into host repos).
 #
 # Skips:
-#  - if .brain-config.yaml absent in host repo
+#  - if .digital-brain-config.yaml absent in host repo
 #  - if commit didn't touch source_paths
 #  - if helpers venv missing
 
@@ -16,17 +16,17 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
-# Resolve this script's real location (follow symlinks) → private-brain dir
+# Resolve this script's real location (follow symlinks) → digital-brain dir
 SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null || python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "$0")"
-PRIVATE_BRAIN_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
-HELPERS_PY="$PRIVATE_BRAIN_DIR/helpers/.venv/bin/python"
+DIGITAL_BRAIN_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
+HELPERS_PY="$DIGITAL_BRAIN_DIR/helpers/.venv/bin/python"
 
-[ -f .brain-config.yaml ] || exit 0
+[ -f .digital-brain-config.yaml ] || exit 0
 [ -x "$HELPERS_PY" ] || exit 0
 
 # Resolve source_paths from config (relative form, host-repo)
 SRC_REL=$("$HELPERS_PY" -c "
-import sys; sys.path.insert(0, '$PRIVATE_BRAIN_DIR/helpers')
+import sys; sys.path.insert(0, '$DIGITAL_BRAIN_DIR/helpers')
 from pathlib import Path
 from config import load_config
 print(' '.join(load_config(Path('.').resolve()).source_paths))
@@ -45,8 +45,8 @@ done
 
 # Run auto-refresh in background — do not block git
 (
-    "$HELPERS_PY" "$PRIVATE_BRAIN_DIR/hooks/auto_refresh.py" 2>&1 | \
-        sed 's/^/[private-brain post-commit] /' >&2
+    "$HELPERS_PY" "$DIGITAL_BRAIN_DIR/hooks/auto_refresh.py" 2>&1 | \
+        sed 's/^/[digital-brain post-commit] /' >&2
 ) &
 disown
 exit 0

@@ -1,16 +1,16 @@
-# Project Brain v1 — Full Production Plan
+# Digital Brain v1 — Full Production Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`). This plan builds on v0 MVP (`2026-05-01-project-brain-v0-mvp.md`) — execute v0 first.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`). This plan builds on v0 MVP (`2026-05-01-digital-brain-v0-mvp.md`) — execute v0 first.
 
-**Goal:** Production-ready system per `docs/project-brain-instruction.md` spec. Adds `/init-brain`, incremental refresh, business notes, inventory stop point, `/load-brain` Scenarios B/C, code-review trail, and extraction to a standalone `project-brain` git repo for cross-project use.
+**Goal:** Production-ready system per `docs/digital-brain-instruction.md` spec. Adds `/init-brain`, incremental refresh, business notes, inventory stop point, `/load-brain` Scenarios B/C, code-review trail, and extraction to a standalone `digital-brain` git repo for cross-project use.
 
 **Architecture:** Same as v0 (Bash + Python helpers + Claude prompts in SKILL.md), extended with: a third skill (`/init-brain`), additional helpers (`git_diff.py`, `stale_detection.py`, `inventory.py`, `business_writer.py`), and a one-time extraction phase that moves everything to a standalone repo with symlinks back into projects.
 
 **Tech Stack:** Same as v0 + `gitpython` (for richer diff parsing) — install via existing helpers venv.
 
-**Prereq:** v0 MVP plan implemented and validated end-to-end on `private-gpt-fork`.
+**Prereq:** v0 MVP plan implemented and validated end-to-end on `<host-repo>`.
 
-**Reference spec:** `docs/project-brain-instruction.md`
+**Reference spec:** `docs/digital-brain-instruction.md`
 
 ---
 
@@ -25,7 +25,7 @@
 | `/load-brain` | Scenario A only | + B (focused), + C (status) |
 | Stale detection | None | `last_source_hash` per concept note |
 | Code review | None | `.last-refresh-diff.md` generated each refresh |
-| Repo location | `.claude/skills/` of host repo | Standalone `project-brain` repo, symlinked into `~/.claude/skills/` |
+| Repo location | `.claude/skills/` of host repo | Standalone `digital-brain` repo, symlinked into `~/.claude/skills/` |
 
 ---
 
@@ -50,13 +50,13 @@ Modified:
 - `.claude/skills/load-brain/SKILL.md` — gain Scenarios B and C
 - `.claude/skills/_brain_helpers/index_writer.py` — count business notes, surface staleness
 
-After Phase N (extraction), all of the above plus `_brain_helpers/` move to `~/dev/project-brain/`. Host repos keep only `.brain-config.yaml`.
+After Phase N (extraction), all of the above plus `_brain_helpers/` move to `~/dev/digital-brain/`. Host repos keep only `.digital-brain-config.yaml`.
 
 ---
 
 ## Phase H: `/init-brain` skill
 
-**Goal:** Bootstrap a new project — detect structure, propose `.brain-config.yaml`, write it, modify `.gitignore`.
+**Goal:** Bootstrap a new project — detect structure, propose `.digital-brain-config.yaml`, write it, modify `.gitignore`.
 
 ### Task H1: project_detect helper (TDD)
 
@@ -76,10 +76,10 @@ After Phase N (extraction), all of the above plus `_brain_helpers/` move to `~/d
 
 **Files:** `.claude/skills/init-brain/SKILL.md`
 
-- [ ] Pre-checks: `.brain-config.yaml` doesn't already exist; `graphify` installed
+- [ ] Pre-checks: `.digital-brain-config.yaml` doesn't already exist; `graphify` installed
 - [ ] Run `project_detect` → propose config
-- [ ] **STOP POINT:** show user proposed config (in plain language) — "I think your sources are X based on Y; vault dir will be `project-brain/`. Edit anything before I save?"
-- [ ] On user confirm: write `.brain-config.yaml`, append `<vault_dir>/` to `.gitignore` (idempotent — check first)
+- [ ] **STOP POINT:** show user proposed config (in plain language) — "I think your sources are X based on Y; vault dir will be `digital-brain/`. Edit anything before I save?"
+- [ ] On user confirm: write `.digital-brain-config.yaml`, append `<vault_dir>/` to `.gitignore` (idempotent — check first)
 - [ ] Print: "Initialized. Run /refresh-brain next."
 - [ ] **Commit:** `feat(brain): add /init-brain skill with structure detection`
 
@@ -87,7 +87,7 @@ After Phase N (extraction), all of the above plus `_brain_helpers/` move to `~/d
 
 - [ ] Create `/tmp/test-init-repo/` with a small Python project structure
 - [ ] Run `/init-brain` from inside it
-- [ ] Verify `.brain-config.yaml` matches expectation
+- [ ] Verify `.digital-brain-config.yaml` matches expectation
 - [ ] Verify `.gitignore` updated
 - [ ] **Commit:** `test(brain): verify /init-brain on synthetic repo`
 
@@ -140,7 +140,7 @@ After Phase N (extraction), all of the above plus `_brain_helpers/` move to `~/d
 ### Task I5: e2e test of incremental flow
 
 - [ ] Run `/refresh-brain` (already done from v0)
-- [ ] Make a small change in `private_gpt/components/retrieval/` and commit
+- [ ] Make a small change in `<src-dir>/` (e.g. a retrieval component) and commit
 - [ ] Run `/refresh-brain` again — verify only retrieval-related concept notes are flagged stale
 - [ ] **Commit:** `test(brain): verify incremental refresh detects only affected notes`
 
@@ -257,56 +257,56 @@ After Phase N (extraction), all of the above plus `_brain_helpers/` move to `~/d
 
 ---
 
-## Phase N: Extract to standalone `project-brain` repo
+## Phase N: Extract to standalone `digital-brain` repo
 
 **Goal:** Move skills + helpers to a standalone repo so the system is reusable across projects.
 
 ### Task N1: Initialize new repo
 
-- [ ] `mkdir ~/dev/project-brain && cd ~/dev/project-brain`
+- [ ] `mkdir ~/dev/digital-brain && cd ~/dev/digital-brain`
 - [ ] `git init`
-- [ ] Create README.md (copy + adapt `docs/project-brain-instruction.md`)
+- [ ] Create README.md (copy + adapt `docs/digital-brain-instruction.md`)
 - [ ] Create LICENSE (MIT)
 - [ ] Create `.gitignore` (Python defaults)
 - [ ] **Commit:** `chore: initial repo`
 
 ### Task N2: Move helpers and skills
 
-- [ ] Copy `private-gpt-fork/.claude/skills/_brain_helpers/` → `~/dev/project-brain/helpers/`
-- [ ] Copy `.claude/skills/{init-brain,refresh-brain,load-brain}/` → `~/dev/project-brain/skills/`
-- [ ] Update bash in SKILL.md files: change `HELPERS_VENV=.claude/skills/_brain_helpers/.venv/bin/python` to `HELPERS_VENV=$HOME/dev/project-brain/helpers/.venv/bin/python`
-- [ ] Update sys.path inserts: change `'.claude/skills/_brain_helpers'` to `os.path.expanduser('~/dev/project-brain/helpers')`
-- [ ] Set up venv in new location: `cd ~/dev/project-brain/helpers && python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"`
+- [ ] Copy `<host-repo>/.claude/skills/_brain_helpers/` → `~/dev/digital-brain/helpers/`
+- [ ] Copy `.claude/skills/{init-brain,refresh-brain,load-brain}/` → `~/dev/digital-brain/skills/`
+- [ ] Update bash in SKILL.md files: change `HELPERS_VENV=.claude/skills/_brain_helpers/.venv/bin/python` to `HELPERS_VENV=$HOME/dev/digital-brain/helpers/.venv/bin/python`
+- [ ] Update sys.path inserts: change `'.claude/skills/_brain_helpers'` to `os.path.expanduser('~/dev/digital-brain/helpers')`
+- [ ] Set up venv in new location: `cd ~/dev/digital-brain/helpers && python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"`
 - [ ] Run tests: `.venv/bin/pytest -v` — all pass
-- [ ] **Commit:** `feat: extract project-brain into standalone repo`
+- [ ] **Commit:** `feat: extract digital-brain into standalone repo`
 
 ### Task N3: Symlink install in user-level skills
 
-- [ ] `ln -s ~/dev/project-brain/skills/init-brain ~/.claude/skills/init-brain`
-- [ ] `ln -s ~/dev/project-brain/skills/refresh-brain ~/.claude/skills/refresh-brain`
-- [ ] `ln -s ~/dev/project-brain/skills/load-brain ~/.claude/skills/load-brain`
+- [ ] `ln -s ~/dev/digital-brain/skills/init-brain ~/.claude/skills/init-brain`
+- [ ] `ln -s ~/dev/digital-brain/skills/refresh-brain ~/.claude/skills/refresh-brain`
+- [ ] `ln -s ~/dev/digital-brain/skills/load-brain ~/.claude/skills/load-brain`
 - [ ] Verify Claude Code recognizes them: list available skills
 
-### Task N4: Remove from `private-gpt-fork`
+### Task N4: Remove from `<host-repo>`
 
 - [ ] `rm -rf .claude/skills/{init-brain,refresh-brain,load-brain,_brain_helpers}`
 - [ ] Update `.gitignore` — remove the brain-helpers entries (no longer in repo)
-- [ ] Verify `.brain-config.yaml` is the ONLY brain-related file in this repo
+- [ ] Verify `.digital-brain-config.yaml` is the ONLY brain-related file in this repo
 - [ ] Re-run `/refresh-brain` (now using user-level symlinks): produces same vault as before extraction
 - [ ] Re-run `/load-brain`: works
 - [ ] **Commit:** `chore(brain): remove skills from this repo (now installed at user level)`
 
 ### Task N5: Push standalone repo to GitHub
 
-- [ ] Create empty GitHub repo `project-brain`
-- [ ] `cd ~/dev/project-brain && git remote add origin git@github.com:<user>/project-brain.git && git push -u origin main`
-- [ ] Update README install instructions to use `git clone https://github.com/<user>/project-brain`
+- [ ] Create empty GitHub repo `digital-brain`
+- [ ] `cd ~/dev/digital-brain && git remote add origin git@github.com:<user>/digital-brain.git && git push -u origin main`
+- [ ] Update README install instructions to use `git clone https://github.com/<user>/digital-brain`
 
 ### Task N6: Test on a second project
 
 - [ ] Pick any other project (or create a small test repo)
 - [ ] `cd <other-project>`
-- [ ] Run `/init-brain` → creates `.brain-config.yaml`
+- [ ] Run `/init-brain` → creates `.digital-brain-config.yaml`
 - [ ] Run `/refresh-brain` → creates vault
 - [ ] Run `/load-brain` → loads INDEX
 - [ ] If all three work without changes, system is portable
