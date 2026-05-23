@@ -36,3 +36,22 @@ def test_register_into_empty_config_creates_vaults_section(fake_obsidian_config,
     assert isinstance(entry["ts"], int)
     # ts is epoch ms — must be in a sane range (after year 2020, before year 2050)
     assert 1_577_836_800_000 < entry["ts"] < 2_524_608_000_000
+
+
+def test_register_preserves_other_vaults(fake_obsidian_config, tmp_path):
+    existing = {
+        "vaults": {
+            "abc123": {"path": "/other/vault", "ts": 1234567890, "open": True}
+        }
+    }
+    fake_obsidian_config.write_text(json.dumps(existing))
+    vault = tmp_path / "newvault"
+    vault.mkdir()
+
+    register_vault(vault)
+
+    data = json.loads(fake_obsidian_config.read_text())
+    assert "abc123" in data["vaults"]
+    assert data["vaults"]["abc123"]["path"] == "/other/vault"
+    assert data["vaults"]["abc123"]["open"] is True
+    assert len(data["vaults"]) == 2
