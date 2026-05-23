@@ -79,6 +79,14 @@ def test_resolve_install_root_recovers_when_install_json_dir_deleted_but_symlink
     assert resolved == install_root.resolve()
 
 
+def test_remove_exits_1_in_non_brain_dir(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    rc = cli.main(["remove", "--yes"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert ".digital-brain-config.yaml" in (captured.err or captured.out)
+
+
 def test_resolve_install_root_uses_symlink_fallback(tmp_path, monkeypatch):
     install_root = _make_install_root(tmp_path / "fallback_root")
     venv_bin = install_root / "helpers" / ".venv" / "bin"

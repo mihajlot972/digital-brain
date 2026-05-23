@@ -93,7 +93,17 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 def cmd_remove(args) -> int:
-    raise NotImplementedError
+    repo_root = Path.cwd()
+    cfg_path = repo_root / ".digital-brain-config.yaml"
+    if not cfg_path.exists():
+        print(
+            f"ERROR: .digital-brain-config.yaml not found in {repo_root}. "
+            "Not a digital-brain project.",
+            file=sys.stderr,
+        )
+        return 1
+    # full implementation comes next task
+    return 0
 
 
 def cmd_uninstall(args) -> int:
