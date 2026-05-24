@@ -20,3 +20,4 @@ env/
 
 # Claude local
 .claude/settings.local.json
+digital-brain/
